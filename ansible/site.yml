@@ -1,0 +1,9 @@
+---
+
+- name: Install netcoreapp and setup proxy on port 80
+  hosts: netcoreapp
+  become: yes
+
+  roles:
+    - netcoreapp-role
+    - nginx-role

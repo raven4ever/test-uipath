@@ -1,0 +1,28 @@
+---
+- name: Fail if distribution is not Ubuntu
+  fail:
+    msg: Invalid operating system
+  when: ansible_distribution != 'Ubuntu'
+
+- name: Install nginx
+  apt:
+    name: nginx
+    state: latest
+
+- name: Disable the default virtual host
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+
+- name: Install reverse proxy configuration
+  template:
+    src: reverse-proxy.conf.j2
+    dest: /etc/nginx/sites-available/reverse-proxy.conf
+
+- name: Make site /etc/nginx/sites-available/reverse-proxy.conf
+  file:
+    src: /etc/nginx/sites-available/reverse-proxy.conf
+    dest: /etc/nginx/sites-enabled/reverse-proxy.conf
+    state: link
+  notify:
+    - Restart nginx

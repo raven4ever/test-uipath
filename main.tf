@@ -48,14 +48,13 @@ resource "azurerm_network_interface" "myterraformnic" {
   }
 }
 
-resource "azurerm_virtual_machine" "vm-linux" {
-  count = length(var.vm_configuration)
-
-  name                  = "${lookup(var.vm_configuration[count.index], "name")}_vm"
-  location              = "${lookup(var.vm_configuration[count.index], "location")}"
-  resource_group_name   = "${lookup(var.vm_configuration[count.index], "name")}"
-  vm_size               = "${lookup(var.vm_configuration[count.index], "vm_size")}"
-  network_interface_ids = ["${azurerm_network_interface.myterraformnic[count.index].id}"]
+# Create virtual machine
+resource "azurerm_virtual_machine" "myterraformvm" {
+  name                  = "myVM"
+  location              = "westeurope"
+  resource_group_name   = "${var.default_resource_group_name}"
+  network_interface_ids = ["${azurerm_network_interface.myterraformnic[0].id}"]
+  vm_size               = "Standard_D2s_v3"
 
   storage_os_disk {
     name              = "myOsDisk"
@@ -72,16 +71,16 @@ resource "azurerm_virtual_machine" "vm-linux" {
   }
 
   os_profile {
-    computer_name  = "${lookup(var.vm_configuration[count.index], "name")}_vm"
+    computer_name  = "myvm"
     admin_username = "azureuser"
-    admin_password = "azureuser"
   }
 
   os_profile_linux_config {
-    disable_password_authentication = false
+    disable_password_authentication = true
     ssh_keys {
       path     = "/home/azureuser/.ssh/authorized_keys"
-      key_data = "/home/adrian/.ssh/id_rsa.pub"
+      key_data = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDTVSc3KQYeaW3tnYnFrLMYILMhWXaA0ZBtbtEVM3lTSBfjJ5jhUxuYxASwI2uq9d2gl7WS4zvGKlpijSYj/g1iiNkBseQ+DwqxkN3R2mwNjgASvKEegFgWrHEhnBRYPas8wFrEXcAC2q9Je4AgzD1dybYSEHyfVFJJuLKfUtU8rVd5WhDGx7F0o1hNgGBFpuc9cM5/+WOISZRrgze6rwxvgbGLVw0q6U+vOqT46gE+A1CXpcP1TqcO4EwadQYunzLRs08HNLhLlSbG0hMYrPI+Uu8OdriT7HxjWIRf9FowJBFAxS4uR5TCGMBiSNb/LWxIJLWORu8eIav9rFAaMhDP adrian@adrian-K52Jr"
     }
   }
 }
+

@@ -1,2 +1,9 @@
 ---
-# defaults file for netcoreapp
+apt_microsoft_repository: "https://packages.microsoft.com/config/ubuntu/{{ ansible_distribution_version }}/packages-microsoft-prod.deb"
+
+app:
+  user: netcoreapp
+  download_url: https://uipathdevtest.blob.core.windows.net/binaries/netcoreapp2.2.zip
+  download_path: /home/netcoreapp/netcoreapp2.2.zip
+  installation_path: /home/netcoreapp/installation
+  executable: MvcSample.dll

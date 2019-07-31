@@ -2,14 +2,16 @@
 Description=Example .NET Web API App running on Ubuntu
 
 [Service]
-WorkingDirectory=/home/netcoreapp/installation/publish
-ExecStart=/usr/bin/dotnet MvcSample.dll
-Restart=always
+User={{ app.user }}
+WorkingDirectory={{ app.installation_path }}/publish
+ExecStart=/usr/bin/dotnet {{ app.executable }}
+
 # Restart service after 10 seconds if the dotnet service crashes:
 RestartSec=10
+Restart=always
+
 KillSignal=SIGINT
 SyslogIdentifier=dotnet-netcoreapp
-User=netcoreapp
 
 [Install]
 WantedBy=multi-user.target

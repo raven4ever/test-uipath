@@ -1,10 +1,8 @@
-provider "azurerm" {
-  version = "~> 1.32"
-}
-
-provider "random" {
-  version = "~> 2.1"
-}
+provider "azurerm" { version = "~> 1.32" }
+provider "random" { version = "~> 2.1" }
+provider "local" { version = "~> 1.3" }
+provider "template" { version = "~> 2.1" }
+provider "null" { version = "~> 2.1" }
 
 # Create virtual network
 resource "azurerm_virtual_network" "myterraformnetwork" {
@@ -49,14 +47,20 @@ resource "azurerm_network_interface" "myterraformnic" {
   }
 }
 
-# Create virtual machine
+resource "random_string" "password" {
+  length  = 16
+  special = true
+}
+
+# Create virtual machines
 resource "azurerm_virtual_machine" "myterraformvm" {
-  count                 = length(var.vm_configuration)
-  name                  = "${lookup(var.vm_configuration[count.index], "name")}-VM"
-  location              = "${lookup(var.vm_configuration[count.index], "location")}"
-  resource_group_name   = "${var.default_resource_group_name}"
-  network_interface_ids = ["${azurerm_network_interface.myterraformnic[count.index].id}"]
-  vm_size               = "${lookup(var.vm_configuration[count.index], "vm_size")}"
+  count                         = length(var.vm_configuration)
+  name                          = "${lookup(var.vm_configuration[count.index], "name")}-VM"
+  location                      = "${lookup(var.vm_configuration[count.index], "location")}"
+  resource_group_name           = "${var.default_resource_group_name}"
+  network_interface_ids         = ["${azurerm_network_interface.myterraformnic[count.index].id}"]
+  vm_size                       = "${lookup(var.vm_configuration[count.index], "vm_size")}"
+  delete_os_disk_on_termination = true
 
   storage_os_disk {
     name              = "${lookup(var.vm_configuration[count.index], "name")}-disk"
@@ -75,17 +79,60 @@ resource "azurerm_virtual_machine" "myterraformvm" {
   os_profile {
     computer_name  = "${lookup(var.vm_configuration[count.index], "name")}-VM"
     admin_username = "${var.vm_user}"
+    admin_password = "${random_string.password.result}"
   }
 
   os_profile_linux_config {
     disable_password_authentication = true
     ssh_keys {
       path     = "/home/azureuser/.ssh/authorized_keys"
-      key_data = "${var.ssh_key}"
+      key_data = "${file(var.ssh_public_key)}"
+    }
+  }
+
+  # Prepare Ansible runtime
+  provisioner "remote-exec" {
+    inline = [
+      "sudo apt -y install python"
+    ]
+
+    connection {
+      type        = "ssh"
+      private_key = "${file(var.ssh_private_key)}"
+      user        = "${var.vm_user}"
+      host        = "${azurerm_public_ip.myterraformpublicip[count.index].fqdn}"
     }
   }
 }
 
+# ANSIBLE
+# Create inventory file from template
+data "template_file" "inventory_file" {
+  template = "${file("./inventory_templates/hosts.tpl")}"
+  vars = {
+    ansible_user      = "${var.vm_user}"
+    node_ip_addresses = "${join("\n", azurerm_public_ip.myterraformpublicip.*.fqdn)}"
+  }
+}
+
+# Save inventory file
+resource "local_file" "saveinventory" {
+  content  = "${data.template_file.inventory_file.rendered}"
+  filename = "./ansible/inventories/test/hosts"
+}
+
+# Execute playbook
+resource "null_resource" "executeansible" {
+  provisioner "local-exec" {
+    command = "ansible-playbook ./ansible/site.yml -i ./ansible/inventories/test/hosts --private-key=${var.ssh_private_key}"
+  }
+
+  triggers = {
+    "after" = "${join(",", azurerm_virtual_machine.myterraformvm.*.id)}"
+  }
+}
+
+# Create Traffic Manager profile
 resource "azurerm_traffic_manager_profile" "netcoreapp" {
   name                   = "netcoreapp-traffic-manager"
   resource_group_name    = "${var.default_resource_group_name}"
@@ -103,6 +150,7 @@ resource "azurerm_traffic_manager_profile" "netcoreapp" {
   }
 }
 
+# Create Traffic Manager endpoints (for each VM)
 resource "azurerm_traffic_manager_endpoint" "endpoints" {
   count               = length(azurerm_public_ip.myterraformpublicip)
   name                = "${lookup(var.vm_configuration[count.index], "name")}-endpoint"
@@ -110,27 +158,4 @@ resource "azurerm_traffic_manager_endpoint" "endpoints" {
   profile_name        = "${azurerm_traffic_manager_profile.netcoreapp.name}"
   target_resource_id  = "${azurerm_public_ip.myterraformpublicip[count.index].id}"
   type                = "azureEndpoints"
-}
-
-resource "azurerm_monitor_metric_alertrule" "trafficmanagermailrule" {
-  name                = "${azurerm_traffic_manager_profile.netcoreapp.name}-primaryendpoint"
-  resource_group_name = "${var.default_resource_group_name}"
-  location            = "${var.default_region}"
-  description         = "An alert rule to send a mail when the primary endpoint is down"
-  enabled             = true
-
-  resource_id = "${azurerm_traffic_manager_endpoint.endpoints[0].id}"
-  metric_name = "Endpoint status by endpoint"
-  operator    = "LessThan"
-  threshold   = 1
-  aggregation = "Average"
-  period      = "PT5M"
-
-  email_action {
-    send_to_service_owners = false
-
-    custom_emails = [
-      "wrtv23@gmail.com"
-    ]
-  }
 }

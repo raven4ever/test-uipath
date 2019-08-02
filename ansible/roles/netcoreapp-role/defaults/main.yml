@@ -1,6 +1,13 @@
 ---
+# Microsoft repository for .NET packages
 apt_microsoft_repository: "https://packages.microsoft.com/config/ubuntu/{{ ansible_distribution_version }}/packages-microsoft-prod.deb"
 
+# Variables related to the application
+# - user: OS user to be created and under which the application will reside
+# - download_url: application package URL
+# - download_path: OS path where the application package will be downloaded
+# - installation_path: OS path where the application package will be unzipped
+# - executable: executable file to start the application
 app:
   user: netcoreapp
   download_url: https://uipathdevtest.blob.core.windows.net/binaries/netcoreapp2.2.zip

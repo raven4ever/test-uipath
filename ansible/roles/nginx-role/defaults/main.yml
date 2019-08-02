@@ -1,4 +1,7 @@
 ---
+# Reverse proxy variables
+# - host: source host to be forwarded
+# - port: port to be forwarded
 proxy:
   host: localhost
   port: 5000

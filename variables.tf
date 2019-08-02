@@ -1,8 +1,3 @@
-variable "ansible_inventory_name" {
-  description = "Tag to be used on VMs to be identified by Ansible"
-  default     = "netcoreapp"
-}
-
 variable "vm_user" {
   description = "OS user to be created"
   default     = "azureuser"
@@ -34,26 +29,29 @@ variable "default_resource_group_name" {
 }
 
 variable "vm_configuration" {
-  type        = "list"
-  description = "list of vms to be created"
-
+  description = "List of VMs to be created"
   default = [
     {
-      name                  = "primary"
-      location              = "westeurope"
-      vm_size               = "Standard_D2s_v3"
-      vnet_name             = "primary_virtualnetwork"
-      vnet_address_space    = "10.0.0.0/16"
-      subnet_address_prefix = "10.0.1.0/24"
-
+      name     = "primary"
+      location = "westeurope"
+      vm_size  = "Standard_D2s_v3"
+      network = {
+        name                  = "primary_virtualnetwork"
+        vnet_address_space    = "10.0.0.0/16"
+        subnet_name           = "primary_subnet"
+        subnet_address_prefix = "10.0.1.0/24"
+      }
     },
     {
-      name                  = "secondary"
-      location              = "northeurope"
-      vm_size               = "Standard_D2s_v3"
-      vnet_name             = "secondary_virtualnetwork"
-      vnet_address_space    = "10.1.0.0/16"
-      subnet_address_prefix = "10.1.1.0/24"
+      name     = "secondary"
+      location = "northeurope"
+      vm_size  = "Standard_D2s_v3"
+      network = {
+        name                  = "secondary_virtualnetwork"
+        vnet_address_space    = "10.1.0.0/16"
+        subnet_name            = "secondary_subnet"
+        subnet_address_prefix = "10.1.1.0/24"
+      }
     }
   ]
 }

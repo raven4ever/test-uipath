@@ -113,7 +113,7 @@ resource "azurerm_virtual_machine" "tf_vm" {
 # ANSIBLE deployment
 # Create inventory file from template
 data "template_file" "create_inventory" {
-  template = file("./inventory_templates/hosts.tpl")
+  template = file("./tf_templates/hosts.tpl")
   vars = {
     ansible_user      = var.vm_user
     node_ip_addresses = join("\n", azurerm_public_ip.tf_public_ip.*.fqdn)

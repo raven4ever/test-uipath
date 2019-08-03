@@ -4,7 +4,7 @@ output "application_url" {
 
 data "template_file" "ssh_connections" {
   count    = length(var.vm_configuration)
-  template = file("./inventory_templates/ssh_connections.tpl")
+  template = file("./tf_templates/ssh_connections.tpl")
   vars = {
     vm_user   = var.vm_user
     vm_fqdn   = azurerm_public_ip.tf_public_ip[count.index].fqdn

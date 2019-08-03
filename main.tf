@@ -165,5 +165,44 @@ resource "azurerm_traffic_manager_endpoint" "tf_endpoints" {
   type                = "azureEndpoints"
 }
 
+# Create send mail action
+resource "azurerm_monitor_action_group" "sendmailaction" {
+  name                = "SendMailAlertsAction"
+  resource_group_name = var.default_resource_group_name
+  short_name          = "p0action"
 
+  dynamic "email_receiver" {
+    for_each = var.mail_list
+    content {
+      name          = email_receiver.value.name
+      email_address = email_receiver.value.email_address
+    }
+  }
+}
 
+# Create monitoring alert
+resource "azurerm_monitor_metric_alert" "tf_endpoint_alert" {
+  name                = "PrimaryEndpointMetricAlert"
+  resource_group_name = var.default_resource_group_name
+  scopes              = [azurerm_traffic_manager_profile.tf_traffic_manager.id]
+  description         = "Action will be triggered when Endpoint metric in less than 1"
+  window_size         = "PT5M"
+
+  criteria {
+    metric_namespace = "Microsoft.Network/trafficManagerProfiles"
+    metric_name      = "Endpoint Status by Endpoint"
+    operator         = "LessThan"
+    threshold        = 1
+    aggregation      = "Maximum"
+
+    dimension {
+      name     = "EndpointName"
+      operator = "Include"
+      values   = [azurerm_traffic_manager_endpoint.tf_endpoints[0].name]
+    }
+  }
+
+  action {
+    action_group_id = azurerm_monitor_action_group.sendmailaction.id
+  }
+}

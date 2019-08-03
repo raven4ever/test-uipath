@@ -1,3 +1,13 @@
+variable "mail_list" {
+  description = "List of emails to be used by the alert"
+  default = [
+    {
+      name          = "sendtoadmin"
+      email_address = "gigi@gmail.com"
+    }
+  ]
+}
+
 variable "vm_user" {
   description = "OS user to be created"
   default     = "azureuser"
@@ -49,7 +59,7 @@ variable "vm_configuration" {
       network = {
         name                  = "secondary_virtualnetwork"
         vnet_address_space    = "10.1.0.0/16"
-        subnet_name            = "secondary_subnet"
+        subnet_name           = "secondary_subnet"
         subnet_address_prefix = "10.1.1.0/24"
       }
     }

@@ -1,1 +1,1 @@
-ssh ${vm_user}@${vm_fqdn} // passwd is ${vm_passwd}
+ssh ${vm_user}@${vm_fqdn} # passwd is ${vm_passwd}

@@ -180,7 +180,7 @@ resource "azurerm_monitor_action_group" "sendmailaction" {
   }
 }
 
-/** Not working
+/* Not working
 # Create monitoring alert
 resource "azurerm_monitor_metric_alert" "tf_endpoint_alert" {
   name                = "PrimaryEndpointMetricAlert"
@@ -207,3 +207,4 @@ resource "azurerm_monitor_metric_alert" "tf_endpoint_alert" {
     action_group_id = azurerm_monitor_action_group.sendmailaction.id
   }
 }
+*/
